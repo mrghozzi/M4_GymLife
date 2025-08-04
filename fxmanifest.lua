@@ -19,8 +19,3 @@ client_scripts {
 server_scripts {
     'server/main.lua'
 }
-
-files {
-    'html/ui.html',
-    'html/ui.js'
-}
