@@ -1,0 +1,25 @@
+Locales = Locales or {}
+
+Locales['en'] = {
+    ['gym_membership_paid'] = 'You have paid %s for your gym membership.',
+    ['gym_membership_active'] = 'Your gym membership is active.',
+    ['gym_membership_expires_soon'] = 'Your gym membership expires in %s days.',
+    ['gym_membership_expired'] = 'Your gym membership has expired.',
+    ['not_enough_money'] = 'You do not have enough money.',
+    ['exercise_cooldown'] = 'You need to wait %s seconds before exercising again.',
+    ['skill_improved'] = 'Your %s skill has improved!',
+    ['max_skill_reached'] = 'You have reached the maximum level for %s skill.',
+    ['press_to_interact'] = '[E] Press to interact with the gym',
+    ['buy_membership'] = 'Buy Monthly Membership - %s',
+    ['current_membership'] = 'Current Membership Status',
+    ['no_active_membership'] = 'No active membership',
+    ['select_exercise'] = 'Select an Exercise',
+    ['membership_days_left'] = '(%s days remaining)',
+    ['check_stats'] = 'Check My Stats',
+    ['toggle_ui'] = 'Toggle Stats UI',
+    ['stats_title'] = 'Fitness Stats',
+    ['stamina_stat'] = 'Stamina: %d/%d',
+    ['health_stat'] = 'Health: %d/%d',
+    ['membership_status'] = 'Membership: %s',
+    ['single_session'] = 'Pay for Single Session - %s',
+}
