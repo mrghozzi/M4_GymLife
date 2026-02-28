@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M4 GymLife HUD</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  #gym-hud {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 200px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease;
+  }
+
+  /* Position variants */
+  #gym-hud.pos-right  { right: 20px; top: 50%; transform: translateY(-50%); }
+  #gym-hud.pos-left   { left: 20px;  top: 50%; transform: translateY(-50%); }
+  #gym-hud.pos-top    { top: 20px;   left: 50%; transform: translateX(-50%); flex-direction: row; }
+  #gym-hud.pos-bottom { bottom: 20px; left: 50%; transform: translateX(-50%); flex-direction: row; }
+
+  .hud-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 4px;
+  }
+
+  .stat-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  .stat-label span.icon { font-size: 13px; margin-right: 5px; }
+
+  .stat-label .val {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-fill.stamina { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .bar-fill.health  { background: linear-gradient(90deg, #10b981, #34d399); }
+
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    margin: 2px 0;
+  }
+
+  .membership-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .membership-row .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .membership-row .dot.active   { background: #34d399; box-shadow: 0 0 5px #34d399; }
+  .membership-row .dot.inactive { background: #f87171; box-shadow: 0 0 5px #f87171; }
+
+  /* Pulse animation on skill gain */
+  @keyframes pulse-glow {
+    0%   { box-shadow: 0 0 0 0 rgba(251,191,36,.5); }
+    70%  { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
+    100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+  }
+  .bar-fill.pulse { animation: pulse-glow 0.8s ease; }
+</style>
+</head>
+<body>
+
+<div id="gym-hud" class="pos-right">
+  <div class="hud-title">🏋️ Fitness</div>
+
+  <!-- Stamina -->
+  <div class="stat-row">
+    <div class="stat-label">
+      <div><span class="icon">⚡</span>Stamina</div>
+      <div class="val" id="stamina-val">0/100</div>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill stamina" id="stamina-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Health -->
+  <div class="stat-row">
+    <div class="stat-label">
+      <div><span class="icon">❤️</span>Health</div>
+      <div class="val" id="health-val">0/100</div>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill health" id="health-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Membership -->
+  <div class="membership-row">
+    <div class="dot inactive" id="membership-dot"></div>
+    <span id="membership-text">No membership</span>
+  </div>
+</div>
+
+<script>
+  const hud = document.getElementById('gym-hud');
+
+  function updateStats(stats) {
+    const staminaPct = (stats.stamina / stats.staminaCap * 100).toFixed(1);
+    const healthPct  = (stats.health  / stats.healthCap  * 100).toFixed(1);
+
+    document.getElementById('stamina-val').textContent = `${stats.stamina}/${stats.staminaCap}`;
+    document.getElementById('health-val').textContent  = `${stats.health}/${stats.healthCap}`;
+
+    const sBar = document.getElementById('stamina-bar');
+    const hBar = document.getElementById('health-bar');
+    sBar.style.width = staminaPct + '%';
+    hBar.style.width = healthPct  + '%';
+
+    // Pulse on update
+    sBar.classList.remove('pulse');
+    hBar.classList.remove('pulse');
+    void sBar.offsetWidth; // reflow
+    void hBar.offsetWidth;
+    sBar.classList.add('pulse');
+    hBar.classList.add('pulse');
+  }
+
+  function updateMembership(membership) {
+    const dot  = document.getElementById('membership-dot');
+    const text = document.getElementById('membership-text');
+
+    if (membership.active) {
+      dot.className  = 'dot active';
+      text.textContent = `Membership: ${membership.daysLeft}d left`;
+    } else {
+      dot.className  = 'dot inactive';
+      text.textContent = 'No active membership';
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+
+    if (data.type === 'showUI') {
+      // Set position class
+      hud.className = 'pos-' + (data.position || 'right');
+      hud.style.display = 'flex';
+      if (data.scale) {
+        hud.style.transform = `translateY(-50%) scale(${data.scale * 2})`;
+      }
+      if (data.stats)      updateStats(data.stats);
+      if (data.membership) updateMembership(data.membership);
+    }
+
+    if (data.type === 'hideUI') {
+      hud.style.display = 'none';
+    }
+
+    if (data.type === 'updateStats') {
+      if (data.stats) updateStats(data.stats);
+    }
+
+    if (data.type === 'updateMembership') {
+      if (data.membership) updateMembership(data.membership);
+    }
+  });
+</script>
+</body>
+</html>
